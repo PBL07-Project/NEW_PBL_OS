@@ -1,29 +1,24 @@
-import React, { useState } from 'react';
-import Register from './components/Register';
-import Login from './components/Login';
-import Chat from './components/Chat';
-import UserList from './components/UserList';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Register from './pages/Register';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import PersonalChatPage from './pages/PersonalChatPage';
+import GroupChatPage from './pages/GroupChatPage';
 
 function App() {
-  const [isAuth, setIsAuth] = useState(!!localStorage.getItem('token'));
-  const [selectedRoom, setSelectedRoom] = useState(null);
-
-  if (!isAuth) {
-    return (
-      <>
-        <h1>Register</h1>
-        <Register onSuccess={() => setIsAuth(true)} />
-        <h1>Login</h1>
-        <Login onSuccess={() => setIsAuth(true)} />
-      </>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex' }}>
-      <UserList onSelect={setSelectedRoom} />
-      {selectedRoom && <Chat room={selectedRoom} />}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/personal" element={<PersonalChatPage />} />
+        <Route path="/group" element={<GroupChatPage />} />
+      </Routes>
+    </Router>
   );
 }
 
