@@ -4,53 +4,59 @@ import axios from 'axios';
 const ChatBox = ({ socket, chat, user, allUsers }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  // This ref is used to mark the last message element for scrolling.
   const messagesEndRef = useRef(null);
 
-  // Scroll to the bottom when new messages arrive
+  // Function to scroll the messages container so that the latest message is visible.
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
-  // Fetch previous messages when the chat changes
+  // Fetch previous messages for the current chat when the chat changes.
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/chat/messages/${chat._id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `http://localhost:5000/api/chat/messages/${chat._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setMessages(res.data);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching messages', err);
       }
     };
 
-    if (chat) {
+    if (chat && chat._id) {
       fetchMessages();
     }
   }, [chat]);
 
-  // Listen for realtime incoming messages for the current chat, with cleanup
+  // Listen for realtime incoming messages for the current chat.
   useEffect(() => {
     if (!chat) return;
+
     const handleMessage = (message) => {
       if (message.chatId === chat._id) {
-        setMessages((prev) => [...prev, message]);
+        setMessages(prevMessages => [...prevMessages, message]);
       }
     };
 
     socket.on('message', handleMessage);
+    // Cleanup the listener when the component unmounts or the chat changes.
     return () => {
       socket.off('message', handleMessage);
     };
   }, [socket, chat]);
 
-  // Scroll to bottom whenever messages update
+  // Auto-scroll to the bottom whenever messages update.
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Send a message via socket
+  // Send a message via the socket.
   const sendMessage = () => {
     if (newMessage.trim()) {
       socket.emit('chatMessage', {
@@ -62,74 +68,85 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     }
   };
 
-  // Determine chat title for header
+  // Determine the chat title (for personal chats, show the other user's name).
   const getChatTitle = () => {
     if (chat.isGroupChat) return chat.name;
-    const otherUser = chat.users.find((u) => u._id !== user.id);
+    const otherUser = chat.users.find(u => u._id !== user.id);
     return otherUser ? otherUser.username : "Chat";
   };
 
-  // Return the name of the sender for a given message
+  // Get the sender's name for each message.
   const getSenderName = (msg) => {
-    const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
+    const senderId = (msg.sender && msg.sender._id) ? msg.sender._id : msg.senderId;
     if (senderId === user.id) return "Me";
     if (msg.sender && msg.sender.username) return msg.sender.username;
     if (msg.senderName) return msg.senderName;
-    return allUsers.find((u) => u._id === senderId)?.username || "Unknown";
+    return allUsers.find(u => u._id === senderId)?.username || "Unknown";
   };
 
-  // Determine message alignment and bubble color based on sender
+  // Calculate alignment of the message based on whether it was sent by the current user.
   const getMessageAlignment = (msg) => {
-    const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
+    const senderId = (msg.sender && msg.sender._id) ? msg.sender._id : msg.senderId;
     return senderId === user.id ? 'flex-end' : 'flex-start';
   };
 
+  // Set bubble color based on message sender.
   const getBubbleColor = (msg) => {
-    const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
+    const senderId = (msg.sender && msg.sender._id) ? msg.sender._id : msg.senderId;
     return senderId === user.id ? '#a5d6a7' : '#ffffff';
   };
 
   return (
+    // The chatbox container is fixed in the viewport.
     <div 
-      className="d-flex flex-column" 
-      style={{ 
-        height: '100%', 
+      className="d-flex flex-column"
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width: '400px',
+        height: '500px',
         borderRadius: '10px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         backgroundColor: '#f5f5f5'
       }}
     >
-      <div style={{ 
-            backgroundColor: '#4caf50', 
-            color: '#fff', 
-            padding: '10px 15px', 
-            borderTopLeftRadius: '10px', 
-            borderTopRightRadius: '10px',
-            fontWeight: 'bold'
-          }}>
+      <div style={{
+          backgroundColor: '#4caf50',
+          color: '#fff',
+          padding: '10px 15px',
+          borderTopLeftRadius: '10px',
+          borderTopRightRadius: '10px',
+          fontWeight: 'bold'
+      }}>
         {getChatTitle()}
       </div>
+      {/* The messages container is scrollable. */}
       <div 
-        className="flex-grow-1 p-2" 
-        style={{ backgroundColor: '#eceff1', overflowY: 'auto' }}
+        className="flex-grow-1 p-2"
+        style={{
+          backgroundColor: '#eceff1',
+          overflowY: 'auto'
+        }}
       >
         {messages.map((msg, index) => (
           <div 
-            key={index} 
-            className="mb-2 d-flex" 
+            key={index}
+            className="mb-2 d-flex"
             style={{ justifyContent: getMessageAlignment(msg) }}
           >
-            <div style={{ 
-                  maxWidth: '75%', 
-                  backgroundColor: getBubbleColor(msg), 
-                  padding: '10px', 
-                  borderRadius: '10px'
-                }}>
+            <div style={{
+                maxWidth: '75%',
+                backgroundColor: getBubbleColor(msg),
+                padding: '10px',
+                borderRadius: '10px'
+            }}>
               <small className="text-muted">{getSenderName(msg)}</small>
               <div>{msg.content}</div>
             </div>
           </div>
         ))}
+        {/* This empty div is used as a marker to scroll into view. */}
         <div ref={messagesEndRef} />
       </div>
       <div className="input-group" style={{ borderTop: '1px solid #ccc' }}>

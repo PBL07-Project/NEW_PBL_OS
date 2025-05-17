@@ -17,32 +17,26 @@ const PersonalChatPage = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const navigate = useNavigate();
 
-  // Get the other user's info from a personal one-to-one chat.
-  const getOtherUser = (chat) => {
-    if (!chat.users) return {};
-    return chat.users.find((u) => u._id !== user.id) || {};
-  };
-
-  // Fetch chats and users on component mount.
+  // Fetch recent chat sessions and user list.
   useEffect(() => {
     const fetchChats = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/chat/all', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Only include personal (non-group) chats.
-        const personalChats = res.data.filter((chat) => !chat.isGroupChat);
+        // Filter to get only personal chats.
+        const personalChats = res.data.filter(chat => !chat.isGroupChat);
         setChats(personalChats);
         if (personalChats.length > 0) {
           setCurrentChat(personalChats[0]);
-          setNotifications((prev) => {
+          setNotifications(prev => {
             const newNotifs = { ...prev };
             delete newNotifs[personalChats[0]._id];
             return newNotifs;
           });
         }
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching chats", err);
       }
     };
 
@@ -53,7 +47,7 @@ const PersonalChatPage = () => {
         });
         setUsers(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching users", err);
       }
     };
 
@@ -61,11 +55,17 @@ const PersonalChatPage = () => {
     fetchUsers();
   }, [token]);
 
-  // When currentChat changes, join the room for that chat.
+  // Utility: Get the other user name from a personal chat.
+  const getOtherUser = (chat) => {
+    if (!chat.users) return {};
+    return chat.users.find(u => u._id !== user.id) || {};
+  };
+
+  // When currentChat is set, join that chat room and clear notifications.
   useEffect(() => {
-    if (currentChat) {
+    if (currentChat && currentChat._id) {
       socket.emit('joinChat', currentChat._id);
-      setNotifications((prev) => {
+      setNotifications(prev => {
         const newNotifs = { ...prev };
         delete newNotifs[currentChat._id];
         return newNotifs;
@@ -73,22 +73,22 @@ const PersonalChatPage = () => {
     }
   }, [currentChat]);
 
-  // Listen for realtime messages: update both the individual chat (via ChatBox) and the recent chats list.
+  // Listen for realtime messages to update recent chats and trigger notifications.
   useEffect(() => {
     const handleMessage = (message) => {
       if (message.chatId) {
-        // Update the latest message for the corresponding chat.
-        setChats((prevChats) =>
-          prevChats.map((chat) => {
+        // Update the "latest message" in the chat list.
+        setChats(prevChats =>
+          prevChats.map(chat => {
             if (chat._id === message.chatId) {
               return { ...chat, latestMessage: message };
             }
             return chat;
           })
         );
-        // If the message isn't for the currently open chat, trigger a notification.
+        // If the message does not belong to the currently open chat, mark a notification.
         if (!currentChat || message.chatId !== currentChat._id) {
-          setNotifications((prev) => ({ ...prev, [message.chatId]: true }));
+          setNotifications(prev => ({ ...prev, [message.chatId]: true }));
         }
       }
     };
@@ -99,7 +99,7 @@ const PersonalChatPage = () => {
     };
   }, [socket, currentChat]);
 
-  // Start a new chat when a user is selected.
+  // Function to start a personal chat with a selected user.
   const handleUserSelect = async (selectedUser) => {
     try {
       const res = await axios.post(
@@ -107,19 +107,19 @@ const PersonalChatPage = () => {
         { userId: selectedUser._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setChats((prevChats) => {
+      setChats(prevChats => {
         const exists = prevChats.find(chat => chat._id === res.data._id);
         if (!exists) return [res.data, ...prevChats];
         return prevChats;
       });
       setCurrentChat(res.data);
-      setNotifications((prev) => {
+      setNotifications(prev => {
         const newNotifs = { ...prev };
         delete newNotifs[res.data._id];
         return newNotifs;
       });
     } catch (err) {
-      console.error(err);
+      console.error("Error starting chat", err);
       alert(err.response?.data?.error || 'Error starting personal chat');
     }
   };
@@ -137,7 +137,7 @@ const PersonalChatPage = () => {
             {chats.length === 0 ? (
               <p className="text-muted">No recent chats</p>
             ) : (
-              chats.map((chat) => {
+              chats.map(chat => {
                 const otherUser = getOtherUser(chat);
                 return (
                   <div 
