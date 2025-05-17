@@ -6,14 +6,14 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Function to scroll the messages container so that the latest message is visible
+  // Scroll to the latest message automatically
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  // Fetch previous messages when the chat prop changes
+  // Fetch previous messages for the current chat
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -33,7 +33,7 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     }
   }, [chat]);
 
-  // Listen for realtime incoming messages for the current chat
+  // Listen for realtime incoming messages so they appear immediately
   useEffect(() => {
     if (!chat) return;
 
@@ -50,12 +50,12 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     };
   }, [socket, chat]);
 
-  // Automatically scroll to the bottom whenever the messages update
+  // Auto-scroll whenever there is an update to the messages
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Send a message via the realtime socket
+  // Send a new message via socket; new messages will be received by the handleMessage listener
   const sendMessage = () => {
     if (newMessage.trim()) {
       socket.emit('chatMessage', {
@@ -67,14 +67,14 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     }
   };
 
-  // Get the chat title, showing the other user's name for personal chats
+  // Get chat title: For personal chats, display the other user's name. For groups, display the group name.
   const getChatTitle = () => {
     if (chat.isGroupChat) return chat.name;
     const otherUser = chat.users.find(u => u._id !== user.id);
     return otherUser ? otherUser.username : 'Chat';
   };
 
-  // Get sender name of a message
+  // Utility to display sender's name
   const getSenderName = (msg) => {
     const senderId = (msg.sender && msg.sender._id) ? msg.sender._id : msg.senderId;
     if (senderId === user.id) return 'Me';
@@ -83,58 +83,52 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     return allUsers.find(u => u._id === senderId)?.username || 'Unknown';
   };
 
-  // Determine message alignment based on sender
+  // Determine message alignment based on whether it's sent by current user
   const getMessageAlignment = (msg) => {
     const senderId = (msg.sender && msg.sender._id) ? msg.sender._id : msg.senderId;
     return senderId === user.id ? 'flex-end' : 'flex-start';
   };
 
-  // Determine message bubble color based on sender
+  // Determine the bubble color based on who sent the message
   const getBubbleColor = (msg) => {
     const senderId = (msg.sender && msg.sender._id) ? msg.sender._id : msg.senderId;
     return senderId === user.id ? '#a5d6a7' : '#ffffff';
   };
 
   return (
-    // Fixed chatbox container positioned in the viewport
     <div 
-      className="d-flex flex-column"
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        width: '400px',
-        height: '500px',
+      className="d-flex flex-column" 
+      style={{ 
+        height: '100%', 
         borderRadius: '10px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         backgroundColor: '#f5f5f5'
       }}
     >
-      <div style={{
-          backgroundColor: '#4caf50',
-          color: '#fff',
-          padding: '10px 15px',
-          borderTopLeftRadius: '10px',
-          borderTopRightRadius: '10px',
-          fontWeight: 'bold'
-      }}>
+      <div style={{ 
+            backgroundColor: '#4caf50', 
+            color: '#fff', 
+            padding: '10px 15px', 
+            borderTopLeftRadius: '10px', 
+            borderTopRightRadius: '10px',
+            fontWeight: 'bold'
+          }}>
         {getChatTitle()}
       </div>
-      {/* Message container is scrollable */}
       <div 
-        className="flex-grow-1 p-2"
+        className="flex-grow-1 p-2" 
         style={{ 
-          backgroundColor: '#eceff1',
+          backgroundColor: '#eceff1', 
           overflowY: 'auto'
         }}
       >
         {messages.map((msg, index) => (
           <div 
             key={index}
-            className="mb-2 d-flex"
+            className="mb-2 d-flex" 
             style={{ justifyContent: getMessageAlignment(msg) }}
           >
-            <div style={{
+            <div style={{ 
                 maxWidth: '75%',
                 backgroundColor: getBubbleColor(msg),
                 padding: '10px',
@@ -145,7 +139,7 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
             </div>
           </div>
         ))}
-        {/* Dummy element for scrolling */}
+        {/* Dummy element to ensure we always scroll to the latest message */}
         <div ref={messagesEndRef} />
       </div>
       <div className="input-group" style={{ borderTop: '1px solid #ccc' }}>
