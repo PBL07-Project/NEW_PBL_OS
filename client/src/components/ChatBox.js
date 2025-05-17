@@ -6,12 +6,10 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
- 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -24,17 +22,28 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
         console.error(err);
       }
     };
-    if (chat) fetchMessages();
+
+    if (chat) {
+      fetchMessages();
+    }
   }, [chat]);
 
-
+  // Listen for realtime incoming messages using a stable event handler
   useEffect(() => {
-    socket.on('message', (message) => {
+    if (!chat) return;
+
+    const handleMessage = (message) => {
       if (message.chatId === chat._id) {
         setMessages((prev) => [...prev, message]);
       }
-    });
-    return () => socket.off('message');
+    };
+
+    socket.on('message', handleMessage);
+
+    // Cleanup the event listener by removing the same handler
+    return () => {
+      socket.off('message', handleMessage);
+    };
   }, [socket, chat]);
 
 
@@ -53,13 +62,11 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     }
   };
 
-  
   const getChatTitle = () => {
     if (chat.isGroupChat) return chat.name;
     const otherUser = chat.users.find((u) => u._id !== user.id);
     return otherUser ? otherUser.username : "Chat";
   };
-
 
   const getSenderName = (msg) => {
     const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
@@ -69,7 +76,6 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     return allUsers.find((u) => u._id === senderId)?.username || "Unknown";
   };
 
-  
   const getMessageAlignment = (msg) => {
     const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
     return senderId === user.id ? 'flex-end' : 'flex-start';

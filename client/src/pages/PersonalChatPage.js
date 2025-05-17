@@ -17,20 +17,19 @@ const PersonalChatPage = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const navigate = useNavigate();
 
-  
+  // Utility: Get the other user's information from a one-to-one chat.
   const getOtherUser = (chat) => {
     if (!chat.users) return {};
     return chat.users.find((u) => u._id !== user.id) || {};
   };
 
-
+  // Fetch chat sessions and users
   useEffect(() => {
     const fetchChats = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/chat/all', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
         const personalChats = res.data.filter((chat) => !chat.isGroupChat);
         setChats(personalChats);
         if (personalChats.length > 0) {
@@ -61,7 +60,7 @@ const PersonalChatPage = () => {
     fetchUsers();
   }, [token]);
 
-  
+  // Join the current chat room and clear notifications
   useEffect(() => {
     if (currentChat) {
       socket.emit('joinChat', currentChat._id);
@@ -73,10 +72,12 @@ const PersonalChatPage = () => {
     }
   }, [currentChat]);
 
-
+  // Listen for realtime incoming messages to update recent chats and notifications.
   useEffect(() => {
-    socket.on('message', (message) => {
+    // Define a stable event handler.
+    const handleMessage = (message) => {
       if (message.chatId) {
+        // Update the chat list with the latest message.
         setChats((prevChats) =>
           prevChats.map((chat) => {
             if (chat._id === message.chatId) {
@@ -85,14 +86,20 @@ const PersonalChatPage = () => {
             return chat;
           })
         );
+        // If the message is not for the current chat, set a notification.
         if (!currentChat || message.chatId !== currentChat._id) {
           setNotifications((prev) => ({ ...prev, [message.chatId]: true }));
         }
       }
-    });
-    return () => socket.off('message');
+    };
+
+    socket.on('message', handleMessage);
+    return () => {
+      socket.off('message', handleMessage);
+    };
   }, [socket, currentChat]);
 
+  // Handle starting a new personal chat by selecting a user.
   const handleUserSelect = async (selectedUser) => {
     try {
       const res = await axios.post(
