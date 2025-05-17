@@ -6,10 +6,12 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
+  // Scroll function for messages area
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Fetch previous messages when the chat changes
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -28,11 +30,12 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     }
   }, [chat]);
 
-  // Listen for realtime incoming messages using a stable event handler
+  // Listen for realtime incoming messages using a stable event handler.
   useEffect(() => {
     if (!chat) return;
 
     const handleMessage = (message) => {
+      // Check if message belongs to the current chat
       if (message.chatId === chat._id) {
         setMessages((prev) => [...prev, message]);
       }
@@ -40,17 +43,18 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
 
     socket.on('message', handleMessage);
 
-    // Cleanup the event listener by removing the same handler
+    // Cleanup event listener on unmount or when chat/socket changes.
     return () => {
       socket.off('message', handleMessage);
     };
   }, [socket, chat]);
 
-
+  // Always scroll to the bottom when messages update.
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Send message to the server via socket
   const sendMessage = () => {
     if (newMessage.trim()) {
       socket.emit('chatMessage', {
@@ -62,12 +66,14 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     }
   };
 
+  // Get chat title based on whether it's a group chat or one-to-one chat.
   const getChatTitle = () => {
     if (chat.isGroupChat) return chat.name;
     const otherUser = chat.users.find((u) => u._id !== user.id);
     return otherUser ? otherUser.username : "Chat";
   };
 
+  // Resolve sender name for each message
   const getSenderName = (msg) => {
     const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
     if (senderId === user.id) return "Me";
@@ -76,11 +82,13 @@ const ChatBox = ({ socket, chat, user, allUsers }) => {
     return allUsers.find((u) => u._id === senderId)?.username || "Unknown";
   };
 
+  // Determine the alignment of a message bubble
   const getMessageAlignment = (msg) => {
     const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
     return senderId === user.id ? 'flex-end' : 'flex-start';
   };
 
+  // Set a bubble color depending on the sender
   const getBubbleColor = (msg) => {
     const senderId = msg.sender && msg.sender._id ? msg.sender._id : msg.senderId;
     return senderId === user.id ? '#a5d6a7' : '#ffffff';
