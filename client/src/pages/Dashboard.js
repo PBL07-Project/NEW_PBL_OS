@@ -9,7 +9,7 @@ const Dashboard = () => {
     <div>
       <Header />
       <div className="container mt-5">
-        <h1 className="text-center">Realtime Chat Application</h1>
+        <h1 className="text-center">REALTIME CHAT APPLICATION</h1>
         <div className="row justify-content-center mt-4">
           <div className="col-md-5 text-center">
             <button onClick={() => navigate('/personal')} className="btn btn-primary w-100 mb-3">

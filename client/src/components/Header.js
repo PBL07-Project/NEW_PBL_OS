@@ -13,7 +13,7 @@ const Header = () => {
   return (
     <header className="bg-primary text-white p-3">
       <div className="container d-flex justify-content-between">
-        <h3 style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Chat App</h3>
+        <h3 style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>DeepChat</h3>
         <button className="btn btn-danger" onClick={logout}>Logout</button>
       </div>
     </header>

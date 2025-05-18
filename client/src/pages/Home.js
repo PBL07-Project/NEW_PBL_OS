@@ -7,7 +7,7 @@ const Home = () => {
 
   return (
     <div className="container text-center mt-5">
-      <h1>Welcome to Realtime Chat App</h1>
+      <h1>Welcome to DEEPCHAT : A realtime messaging App Powered by OS - Level Fundamentals</h1>
       <p className="lead">Connect with friends and colleagues instantly</p>
       <div className="d-flex justify-content-center my-4">
         <button 
