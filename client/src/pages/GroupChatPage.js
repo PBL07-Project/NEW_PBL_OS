@@ -4,9 +4,7 @@ import ChatBox from '../components/ChatBox';
 import Header from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-
 const socket = io('http://localhost:5000');
-
 const GroupChatPage = () => {
   const [chats, setChats] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
@@ -17,7 +15,6 @@ const GroupChatPage = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const [allUsers, setAllUsers] = useState([]);
   const navigate = useNavigate();
-
   useEffect(() => {
     const fetchChats = async () => {
       try {
@@ -130,7 +127,7 @@ const GroupChatPage = () => {
   return (
     <div>
       <Header />
-      <div className="container-fluid" style={{ backgroundColor: '#fbc02d', height: '100vh', overflow: 'hidden' }}>
+      <div className="container-fluid" style={{ backgroundColor: 'white', height: '100vh', overflow: 'hidden' }}>
         <button className="btn btn-link my-2" onClick={() => navigate('/dashboard')}>
           &larr; Back to Dashboard
         </button>

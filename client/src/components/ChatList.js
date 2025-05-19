@@ -1,5 +1,4 @@
 import React from 'react';
-
 const ChatList = ({ groupChats, personalChats, setCurrentChat, currentChat }) => {
   return (
     <div>
@@ -24,7 +23,6 @@ const ChatList = ({ groupChats, personalChats, setCurrentChat, currentChat }) =>
         <p className="text-muted">No personal chats available.</p>
       ) : (
         personalChats.map((chat) => {
-          // Display the name of the other user in a personal chat
           const otherUser = chat.users.find(u => u._id !== currentChat?.users[0]) || { username: 'User' };
           return (
             <div 

@@ -5,9 +5,7 @@ import UsersList from '../components/UsersList';
 import Header from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-
 const socket = io('http://localhost:5000');
-
 const PersonalChatPage = () => {
   const [chats, setChats] = useState([]);
   const [currentChat, setCurrentChat] = useState(null);
@@ -16,15 +14,12 @@ const PersonalChatPage = () => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user'));
   const navigate = useNavigate();
-
-  // Fetch recent chat sessions and user list.
   useEffect(() => {
     const fetchChats = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/chat/all', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Filter to get only personal chats.
         const personalChats = res.data.filter(chat => !chat.isGroupChat);
         setChats(personalChats);
         if (personalChats.length > 0) {
@@ -39,7 +34,6 @@ const PersonalChatPage = () => {
         console.error("Error fetching chats", err);
       }
     };
-
     const fetchUsers = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/users/all', {
@@ -55,13 +49,11 @@ const PersonalChatPage = () => {
     fetchUsers();
   }, [token]);
 
-  // Utility: Get the other user name from a personal chat.
   const getOtherUser = (chat) => {
     if (!chat.users) return {};
     return chat.users.find(u => u._id !== user.id) || {};
   };
 
-  // When currentChat is set, join that chat room and clear notifications.
   useEffect(() => {
     if (currentChat && currentChat._id) {
       socket.emit('joinChat', currentChat._id);
@@ -73,11 +65,10 @@ const PersonalChatPage = () => {
     }
   }, [currentChat]);
 
-  // Listen for realtime messages to update recent chats and trigger notifications.
+
   useEffect(() => {
     const handleMessage = (message) => {
       if (message.chatId) {
-        // Update the "latest message" in the chat list.
         setChats(prevChats =>
           prevChats.map(chat => {
             if (chat._id === message.chatId) {
@@ -86,7 +77,6 @@ const PersonalChatPage = () => {
             return chat;
           })
         );
-        // If the message does not belong to the currently open chat, mark a notification.
         if (!currentChat || message.chatId !== currentChat._id) {
           setNotifications(prev => ({ ...prev, [message.chatId]: true }));
         }
@@ -98,8 +88,6 @@ const PersonalChatPage = () => {
       socket.off('message', handleMessage);
     };
   }, [socket, currentChat]);
-
-  // Function to start a personal chat with a selected user.
   const handleUserSelect = async (selectedUser) => {
     try {
       const res = await axios.post(
@@ -127,7 +115,7 @@ const PersonalChatPage = () => {
   return (
     <div>
       <Header />
-      <div className="container-fluid" style={{ backgroundColor: '#ffeb3b', height: '100vh', overflow: 'hidden' }}>
+      <div className="container-fluid" style={{ backgroundColor: 'white', height: '100vh', overflow: 'hidden' }}>
         <button className="btn btn-link my-2" onClick={() => navigate('/dashboard')}>
           &larr; Back to Dashboard
         </button>
